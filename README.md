@@ -108,6 +108,83 @@ $: function(selector, context) {
             }
         }
 ```
+* 框选
+```
+ // 文件框选功能
+    // /*
+    // * 1.生成一个框选框
+    // * 2.碰撞检测
+    // * */
+    function checkLine() {
+        let newSel = 0;
+        let disX = 0;
+        let disY = 0;
+        let fileItem = tools.$('.file-item',fileList);
+        let checkboxs = tools.$('.checkbox',fileList); 
+        tools.addEvent(fileList, 'mousedown', function(evt) {
+            evt = window.event || evt;
+            let target = evt.target;
+            disX = evt.clientX;
+            disY = evt.clientY;
+
+            // 如果框选在选中框上边，则取消框选
+            if(tools.parents(target, '.nav-a')) {
+                return;
+            }
+
+            // 鼠标移动
+            tools.addEvent(document, 'mousemove', moveFn);
+            tools.addEvent(document, 'mouseup', upFn);
+            tools.stopDefault();
+        })
+        function moveFn(evt) {
+            evt = window.event || evt;
+            //框选框大于一定范围时，才做框选操作
+            if(Math.abs(evt.clientX - disX) > 10 || Math.abs(evt.clientY - disY) > 10) {
+                if(!newSel) {
+                    newSel = document.createElement('div');
+                    newSel.className = 'selectTab';
+                    document.body.appendChild(newSel);
+                }
+
+                let wid = evt.clientX - disX;
+                let hgt = evt.clientY - disY;
+
+                newSel.style.left = Math.min(evt.clientX, disX) + 'px';
+                newSel.style.top = Math.min(evt.clientY, disY) + 'px';
+                tools.show(newSel);
+
+                newSel.style.width = Math.abs(wid) + 'px';
+                newSel.style.height = Math.abs(hgt) + 'px';
+                
+                // 检测碰撞，遍历文件区域所有的文件
+                tools.each(fileItem, function(item,index){
+                    if(tools.collisionRect(item, newSel)){
+                        tools.addClass(item,'file-checked');
+                        tools.addClass(checkboxs[index], 'checked');
+                    }else{
+                        tools.removeClass(item, 'file-checked');
+                        tools.removeClass(checkboxs[index], 'checked');
+                    }
+                });
+                if( whoSelect().length === checkboxs.length ){
+                    tools.addClass(checkedAll,"checked");
+                }else{
+                    tools.removeClass(checkedAll,"checked");
+                }
+            }
+        }
+        function upFn(){
+            tools.removeEvent(document,'mousemove',moveFn);
+            tools.removeEvent(document,'mouseup',upFn);
+            if(newSel) {
+                tools.hide(newSel);
+                newSel.style.width = '0px';
+                newSel.style.height = '0px';
+            }
+        }
+    }
+```
 * 事件监听
 ```
  addEvent: function(obj, evtName, fn) {
