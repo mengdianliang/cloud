@@ -2,7 +2,7 @@
 
 --------
 ### 概述
-项目是基于Vue.js，成品是一个PC端的购物车。前端的许多操作都要传输到后台，所以这里node也是很重要的一部分。
+项目是基于原生js，成品是一个PC端的云盘车，实现了其中的一部分功能。
 #### 模块划分
 > 
 * [x] 用户登陆登出
@@ -157,10 +157,12 @@ router.post("/cartEdit", function (req, res, next) {
 为了减少流量，图片加载使用了懒加载的方式，滚动时再加载真实的图片。
 
 ### 效果
-![](https://github.com/mengdianliang/shopping/blob/master/show/goodlist.png)
-![](https://github.com/mengdianliang/shopping/blob/master/show/cart.png)
-![](https://github.com/mengdianliang/shopping/blob/master/show/address.png)
-![](https://github.com/mengdianliang/shopping/blob/master/show/order.png)
+![](https://github.com/mengdianliang/cloud/blob/master/show/page.png)
+![](https://github.com/mengdianliang/cloud/blob/master/show/list.png)
+![](https://github.com/mengdianliang/cloud/blob/master/show/check.png)
+![](https://github.com/mengdianliang/cloud/blob/master/show/checkall.png)
+![](https://github.com/mengdianliang/cloud/blob/master/show/move.png)
+![](https://github.com/mengdianliang/cloud/blob/master/show/rename.png)
 ### 构建
 #### 开发环境
 
