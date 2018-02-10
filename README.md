@@ -20,142 +20,165 @@
 *  事件委托
 *  拖拽
 *  碰撞检测
-*  Mongodb
 
-#### 目录结构
-* api：用来请求服务器端数据的，通过`axios`发送请求，服务端代理，需要在`config/index.js`中设置代理接口
-    proxyTable: {
-      '/api': {
-        target: 'http://localhost:9000'
-      }
+#### js目录结构
+* data.js：用来存放数据的
+* handleData.js: 用来操作数据的工具类函数
+* htmlTemplate.js: 用来做结构渲染的类函数
+* index.js: 直接对页面元素做功能操作的入口
+* pupup.js: 封装的弹出层模板
+* tools.js: 一些DOM操作的方法
+
+### 功能点
+这里有一些自己感觉好的方法和思想，简要说一下：
+#### 获取元素、添加类属性，删除类属性
+```
+$: function(selector, context) {
+            /*
+            * #id
+            * .class
+            * 标签
+            * '#id li'
+            * '.class a'
+            * */
+            context = context || document;
+            //群组选择器
+            if(selector.indexOf(' ') !== -1){
+                return context.querySelectorAll(selector);
+                //id获取
+            }else if(selector.charAt(0) === '#'){
+                return context.getElementById(selector.slice(1));
+                //class获取
+            }else if(selector.charAt(0) === '.'){
+                return tools.getByClass(selector.slice(1), context);
+                //标签获取
+            }else{
+                return context.getElementsByTagName(selector);
+            }
+        },
+        getByClass: function(className, context) {
+            //context获取某一元素下边的
+            //className传递过来的类样式
+            context = context || document;
+            //如果浏览器支持通过类样式获取元素，执行下边代码
+            if(context.getElementsByClassName) {
+                return context.getElementsByClassName(className);
+            }
+            //获取context下的所有节点，ret用来存储获取到的节点
+            let nodes = context.getElementsByTagName('*'),
+                ret = [];
+            for(let i= 0; i < nodes.length; i++) {
+                if(hasClass(nodes[i], className)){
+                    ret.push(nodes[i]);
+                }
+            }
+            return ret;
+        },
+        addClass: function(element, classNames){
+            if(typeof classNames === 'string') {
+                if(tools.hasClass(element, classNames)) {
+                    return;
+                }
+                let newClass = element.className.split(' ');
+                newClass.push(classNames);
+                element.className = newClass.join(' ');
+            }
+        },
+        removeClass: function(element, classNames){
+            let classNameArr = element.className.split(' ');
+            for(let i = 0;i < classNameArr.length;i++){
+                if(classNameArr[i] === classNames){
+                    classNameArr.splice(i, 1);
+                    i--;
+                }
+            }
+            element.className = classNameArr.join(' ');
+        },
+        hasClass: function(element,classNames){
+            let reg = new RegExp('(^|\\s)' + classNames + '(\\s|$)');
+            return reg.test(element.className);
+        },
+        toggleClass: function(element,classNames){
+            if(tools.hasClass(element,classNames)){
+                tools.removeClass(element,classNames);
+                return false;
+            }else{
+                tools.addClass(element,classNames);
+                return true;
+            }
+        }
+```
+* 事件监听
+```
+ addEvent: function(obj, evtName, fn) {
+            //obj事件对象，evtname事件名，fn事件执行函数
+            if (obj.addEventListener) {
+                return obj.addEventListener(evtName, fn, false);
+            } else {
+                return obj.attachEvent('on' + evtName, function(){
+                fn.call(obj);
+                });
+            }
+        },
+        removeEvent: function(obj, evtName, fn) {
+            //obj事件对象，evtname事件名，fn事件执行函数
+            if(removeEventListener){
+                return obj.removeEventListener(evtName, fn, false);
+            }else{
+                return obj.detachEvent('on' + evtName, function(){
+                    fn.call(obj);
+                })
+            }
+        },
+```
+* 个人总结：
+```
+(1)对于结构不断发生改变的元素来说，使用直接点击事件，比事件绑定要好得多：
+eg:
+    // 删除文件
+    function delFile() {
+        //删除文件的按钮
+        let delList = tools.$('.delect');
+
+        let fileItem = tools.$('.file-item',fileList);
+        let checkboxs = tools.$('.checkbox',fileList); 
+
+        for(let i = 0; i < delList.length; i++){
+            delList[i].onmousedown = function(evt) {
+                
+            // 这里不用事件监听函数的原因是：事件监听是可以重复执行的}
+            // tools.addEvent(delList[i],'mousedown',function(evt){
+                // console.log(this)
+                evt = window.event || evt;
+                let target = evt.target;
+                if(target.getAttribute('frag') == 'true'){
+                    let item = tools.parents(target,'.file-item');
+                    tools.each(fileItem, function(_item, index) {
+                        if(_item == item){
+                            tools.addClass(_item,'file-checked');
+                            tools.addClass(checkboxs[index],'checked');
+                        }else{
+                            tools.removeClass(_item,'file-checked');
+                            tools.removeClass(checkboxs[index],'checked');
+                            tools.removeClass(checkedAll,'checked');
+                        }
+                    });
+                }
+                // 删除操作
+                operDel();
+
+                if(contentMenu.style.display == 'block'){
+                    contentMenu.style.display = '';
+                }
+                // console.log(datas);
+                tools.cancelBub();
+            };
+        }
     }
-* assets: 存放样式资源
-* components: 存放一些基础组件
-* views: 存放一些视图组件
-* router: 配置路由
-* store: 一些共享状态管理(由于这里状态只有用户，购物车数量，所以直接写在了main.js文件中)
-
-#### server目录结构
-* bin：服务端启动项
-* models: 数据库模型
-* public: 服务端页面样式，文字，图片资源
-* routes: 服务端路由
-* util: 工具类文件
-* views: 返回给客户端的网页模板
-* app.js: 服务端入口文件
-
-#### 好用的插件
-* 图片懒加载
-  ``` bash
-  npm install vue-lazyload -D
-  import VueLazyload from 'vue-lazyload'
-  github网址：https://github.com/hilongjw/vue-lazyload
-  ```
-* `express-generator`生成器
-  ``` 
-  npm install express-generator -S
-  这是一个express自动生成插件
-  ```
-* 分页加载vue-infinite-scroll
-  ``` bash
-  npm install vue-infinite-scroll --save
-  import infiniteScroll from 'vue-infinite-scroll'
-  Vue.use(infiniteScroll)
-  github网址：https://github.com/ElemeFE/vue-infinite-scroll
-  ```
-### Node知识点
-由于node学的不是很好，所以这里总结一下感觉比较特别的一些基础知识。
-#### 数据库
+  (2) 对于结构变化的元素，尽量在函数内部重新获取，这样结构更清晰，代码更严谨。（尽管在外部也能获取） 
+  (3) 数据改变视图，只有在页面改变比较大时，才适合用；否则，我们可以改变局部页面结构和数据
+  (4) 模块化对于后期的维护有很大的帮助。
 ```
-显示数据库列表 show dbs
-创建一个demo数据库 use demo
-创建数据库表：db.createCollection("user")
-
-创建数据库集合并插入数据:
-db.users.insert({id: 123, name: "张三"})
-查看数据库集合：show collections
-删除数据库: db.dropDatabase()
-删除集合: db.user.drop() 
-
-插入数据：db.user.insert({id: 123, username: 'jack', age: 20, class: {name: 'imooc', num: 10}})
-查询数据并格式化：db.user.find().pretty()
-查询第一条数据：db.user.findOne()
-条件查询：db.user.find({'username': 'jack'})
-          db.user.find({'age': {$gt: 20}})		
-更新数据：db.user.update({username: "jack"}, {$set: {age: 30}})
-更新子数据：db.user.update({username: "jack"}, {$set: {'class.name': 'imooc-jack'}})
-
-删除数据：db.user.remove({id: 123})
-
-导入文件数据：mongoimport -d db_demo -c users --file E:/代码/project/v18dyy/resource/dumall-users
-```
-* 删除购物车商品
-```
-router.post('/cartDel', function (req, res, next) {
-  var userId = req.cookies.userId
-  var productId = req.body.productId
-  // $pull 要删除的数据
-  User.update({
-    userId: userId
-  }, {
-    $pull: {
-      'cartList': {
-        'productId': productId
-      }
-    }
-  },function (err, doc) {
-    if (err) {
-      res.json({
-        code: 1,
-        msg: err.message,
-        result: ''
-      })
-    } else {
-      res.json({
-        code: 0,
-        msg: '',
-        result: 'suc'
-      })
-    }
-  })
-})
-```
-* 修改购物车商品数量
-```
-router.post("/cartEdit", function (req, res, next) {
-  var userId = req.cookies.userId
-  var productId = req.body.productId
-  var productNum = req.body.productNum
-  var checked = req.body.checked
-
-  // 更新子文档
-  User.update({"userId": userId, "cartList.productId": productId}, {
-    "cartList.$.productNum": productNum,
-    "cartList.$.checked": checked,
-    }, function (err,doc) {
-    if (err) {
-      res.json({
-        code: 1,
-        msg: err.message,
-        result: ''
-      });
-    } else {
-      res.json({
-        code: 0,
-        msg: '',
-        result: 'suc'
-      })
-    }
-  })
-})
-```
-
-### 交互体验
-该项目使用纯手写css样式，采用响应式布局，使用transition效果。使用到了分页加载插件`vue-infinite-scroll`，做到了下拉加载效果。
-
-通过原生js实现的进度条效果，详情请看https://github.com/mengdianliang/shopping/blob/master/src/components/progress/progress.vue
-
-为了减少流量，图片加载使用了懒加载的方式，滚动时再加载真实的图片。
 
 ### 效果
 ![](https://github.com/mengdianliang/cloud/blob/master/show/page.png)
@@ -164,19 +187,9 @@ router.post("/cartEdit", function (req, res, next) {
 ![](https://github.com/mengdianliang/cloud/blob/master/show/checkall.png)
 ![](https://github.com/mengdianliang/cloud/blob/master/show/move.png)
 ![](https://github.com/mengdianliang/cloud/blob/master/show/rename.png)
-### 构建
-#### 开发环境
 
-``` bash
-# install dependencies
-npm install
-# start server
-node server/bin/www
-# serve with hot reload at localhost:8080
-npm run dev
-```
 ### 总结
-通过学习该项目，对node又有了新的认识。虽然也有许多获取数据失败的问题，最多的还是node知识不扎实造成的，希望以后再node上多下点功夫。摁，加油！
+通过学习该项目，对js的理解有进一层，这里根据自己经验的积累，有很多自己总结的方法，希望能对大家学习有帮助。
 
 
 
